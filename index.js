@@ -36,30 +36,30 @@ async function run() {
     });
 
     app.get("/pets", async (req, res) => {
-      const { search } = req.query;
-      let cursor;
+      const { search, species, age, size } = req.query;
+      let query = {};
       if (search) {
-        cursor = await petsCollection.find({
-          $or: [
-            {
-              petName: {
-                $regex: search,
-                $options: "i",
-              },
+        query.$or = [
+          {
+            petName: {
+              $regex: search,
+              $options: "i",
             },
-            {
-              breed: {
-                $regex: search,
-                $options: "i",
-              },
+          },
+          {
+            breed: {
+              $regex: search,
+              $options: "i",
             },
-          ],
-        });
-      } else {
-        cursor = petsCollection.find();
+          },
+        ];
+      }
+      // SPECIES
+      if (species) {
+        query.species = species;
       }
 
-      const results = await cursor.toArray();
+      const results = await petsCollection.find(query).toArray();
       res.json(results);
     });
 
