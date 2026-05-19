@@ -30,7 +30,17 @@ async function run() {
     const db =client.db('pawly')
     const petsCollection = db.collection('pets')
 
-    
+    app.post('/add-pet', async (req, res) => {
+      const pet = req.body
+      const result = await petsCollection.insertOne(pet)
+      res.send(result)
+    })
+
+    app.get('/pets', async (req, res) => {
+      const cursor = petsCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
 
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
