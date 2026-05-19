@@ -29,10 +29,10 @@ async function run() {
     const petsCollection = db.collection("pets");
 
     // pets apis
-    app.post("/add-pet", async (req, res) => {
+    app.post("/pets", async (req, res) => {
       const pet = req.body;
       const result = await petsCollection.insertOne(pet);
-      res.send(result);
+      res.json(result);
     });
 
     app.get("/pets", async (req, res) => {
@@ -77,6 +77,17 @@ async function run() {
       res.json(results);
     });
 
+    app.get("/pets", async (req, res) => {
+      const email = req.query.email;
+
+      const result = await petsCollection
+        .find({
+          ownerEmail: email,
+        })
+        .toArray();
+
+      res.send(result);
+    });
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
