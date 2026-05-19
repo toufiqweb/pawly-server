@@ -36,16 +36,47 @@ async function run() {
     });
 
     app.get("/pets", async (req, res) => {
-      const cursor = await petsCollection.find().toArray();
-      res.send(cursor);
+      const { search } = req.query;
+      let cursor;
+      if (search) {
+        cursor = await petsCollection.find({
+          $or: [
+            {
+              petName: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+            {
+              breed: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+          ],
+        });
+      } else {
+        cursor = petsCollection.find();
+      }
+
+      const results = await cursor.toArray();
+      res.json(results);
     });
 
     app.get("/pets/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const pet = await petsCollection.findOne(query);
-      res.send(pet);
+      res.json(pet);
     });
+
+    // featured pets api
+    app.get("/featured-pets", async (req, res) => {
+      const cursor = await petsCollection.find().limit(6);
+      const results = await cursor.toArray();
+      res.json(results);
+    });
+
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
