@@ -77,6 +77,7 @@ async function run() {
       res.json(results);
     });
 
+    // my listing api
     app.get("/pets", async (req, res) => {
       const email = req.query.email;
 
@@ -88,6 +89,26 @@ async function run() {
 
       res.send(result);
     });
+
+    app.patch("/pets/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const updateData = req.body;
+
+        const result = await petsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData },
+        );
+
+        res.json({
+          success: true,
+          result,
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
