@@ -109,6 +109,13 @@ async function run() {
       }
     });
 
+    app.delete("/pets/:petId", async (req, res) => {
+      const { petId } = req.params;
+      const result = await petsCollection.deleteOne({
+        _id: new ObjectId(petId),
+      });
+      res.json(result);
+    });
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
