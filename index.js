@@ -79,17 +79,36 @@ async function run() {
     });
 
     // my listing api
-    app.get("/pets", async (req, res) => {
-      const email = req.query.email;
+    // app.get("/pets", async (req, res) => {
+    //   const email = req.query.email;
 
-      const result = await petsCollection
-        .find({
-          ownerEmail: email,
-        })
-        .toArray();
+    //   const result = await petsCollection
+    //     .find({
+    //       ownerEmail: email,
+    //     })
+    //     .toArray();
+
+    //   res.json(result);
+    // });
+
+
+
+    
+    app.get("/pets", async (req, res) => {
+      console.log("QUERY:", req.query);
+
+      const email = req.query.email;
+      console.log("EMAIL:", email);
+
+      const result = await petsCollection.find({ ownerEmail: email }).toArray();
 
       res.send(result);
     });
+
+
+
+
+
 
     app.patch("/pets/:id", async (req, res) => {
       try {
@@ -123,6 +142,16 @@ async function run() {
       const requestData = req.body;
 
       const result = await requestsCollection.insertOne(requestData);
+
+      res.json(result);
+    });
+
+    app.get("/my-requests/:email", async (req, res) => {
+      const email = req.params.email;
+
+      const result = await requestsCollection
+        .find({ userEmail: email })
+        .toArray();
 
       res.json(result);
     });
