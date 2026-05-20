@@ -27,6 +27,7 @@ async function run() {
 
     const db = client.db("pawly");
     const petsCollection = db.collection("pets");
+    const requestsCollection = db.collection("requests");
 
     // pets apis
     app.post("/pets", async (req, res) => {
@@ -116,6 +117,16 @@ async function run() {
       });
       res.json(result);
     });
+
+    // my requests
+    app.post("/adoption-requests", async (req, res) => {
+      const requestData = req.body;
+
+      const result = await requestsCollection.insertOne(requestData);
+
+      res.json(result);
+    });
+
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
