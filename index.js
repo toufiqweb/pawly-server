@@ -37,7 +37,7 @@ async function run() {
     });
 
     app.get("/pets", async (req, res) => {
-      const { search, species, age, size } = req.query;
+      const { search, species, age, size, email } = req.query;
       let query = {};
       if (search) {
         query.$or = [
@@ -79,36 +79,12 @@ async function run() {
     });
 
     // my listing api
-    // app.get("/pets", async (req, res) => {
-    //   const email = req.query.email;
-
-    //   const result = await petsCollection
-    //     .find({
-    //       ownerEmail: email,
-    //     })
-    //     .toArray();
-
-    //   res.json(result);
-    // });
-
-
-
-    
-    app.get("/pets", async (req, res) => {
-      console.log("QUERY:", req.query);
-
+    app.get("/listings", async (req, res) => {
       const email = req.query.email;
-      console.log("EMAIL:", email);
-
       const result = await petsCollection.find({ ownerEmail: email }).toArray();
 
       res.send(result);
     });
-
-
-
-
-
 
     app.patch("/pets/:id", async (req, res) => {
       try {
@@ -146,16 +122,58 @@ async function run() {
       res.json(result);
     });
 
-    app.get("/my-requests/:email", async (req, res) => {
-      const email = req.params.email;
+    app.get("/requests", async (req, res) => {
+      const { userEmail, petId } = req.query;
+      const query = {};
 
-      const result = await requestsCollection
-        .find({ userEmail: email })
-        .toArray();
+      if (userEmail) query.userEmail = userEmail;
+      if (petId) query.petId = petId;
 
+      const result = await requestsCollection.find(query).toArray();
       res.json(result);
     });
 
+    app.patch("/requests/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const { status } = req.body;
+
+        const allowed = ["approved", "rejected", "pending"];
+        if (!allowed.includes(status)) {
+          return res.status(400).send({ message: "Invalid status" });
+        }
+
+        const request = await requestsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        if (!request) {
+          return res.status(404).send({ message: "Request not found" });
+        }
+
+        const result = await requestsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { status } },
+        );
+
+        if (status === "approved") {
+          await requestsCollection.updateMany(
+            {
+              petId: request.petId,
+              _id: { $ne: new ObjectId(id) },
+            },
+            {
+              $set: { status: "rejected" },
+            },
+          );
+        }
+
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
