@@ -174,6 +174,16 @@ async function run() {
         res.status(500).send({ message: "Server error" });
       }
     });
+
+    app.delete("/requests/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const result = await requestsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
+      res.send(result);
+    });
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
