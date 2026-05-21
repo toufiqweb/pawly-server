@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 dotenv.config();
 
 const app = express();
@@ -20,6 +21,31 @@ const client = new MongoClient(uri, {
   },
 });
 
+const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`));
+
+const verifyToken = async (req, res, next) => {
+  const header = req.headers.authorization;
+  // console.log(header);
+
+  if (!header) {
+    return res.status(401).send({ message: "Unauthorized" });
+  }
+  const token = header.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized" });
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    console.log(payload);
+
+    next();
+  } catch (error) {
+    return res.status(403).send({ message: "Forbidden" });
+  }
+};
+
 async function run() {
   try {
     // await client.connect();
@@ -30,7 +56,7 @@ async function run() {
     const requestsCollection = db.collection("requests");
 
     // pets apis
-    app.post("/pets", async (req, res) => {
+    app.post("/pets", verifyToken, async (req, res) => {
       const pet = req.body;
       const result = await petsCollection.insertOne(pet);
       res.json(result);
@@ -64,7 +90,7 @@ async function run() {
       res.json(results);
     });
 
-    app.get("/pets/:id", async (req, res) => {
+    app.get("/pets/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const pet = await petsCollection.findOne(query);
@@ -79,14 +105,14 @@ async function run() {
     });
 
     // my listing api
-    app.get("/listings", async (req, res) => {
+    app.get("/listings", verifyToken, async (req, res) => {
       const email = req.query.email;
       const result = await petsCollection.find({ ownerEmail: email }).toArray();
 
       res.send(result);
     });
 
-    app.patch("/pets/:id", async (req, res) => {
+    app.patch("/pets/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const updateData = req.body;
@@ -105,7 +131,7 @@ async function run() {
       }
     });
 
-    app.delete("/pets/:petId", async (req, res) => {
+    app.delete("/pets/:petId", verifyToken, async (req, res) => {
       const { petId } = req.params;
       const result = await petsCollection.deleteOne({
         _id: new ObjectId(petId),
@@ -114,7 +140,7 @@ async function run() {
     });
 
     // my requests
-    app.post("/adoption-requests", async (req, res) => {
+    app.post("/adoption-requests", verifyToken, async (req, res) => {
       const requestData = req.body;
 
       const result = await requestsCollection.insertOne(requestData);
@@ -122,7 +148,7 @@ async function run() {
       res.json(result);
     });
 
-    app.get("/requests", async (req, res) => {
+    app.get("/requests", verifyToken, async (req, res) => {
       const { userEmail, petId } = req.query;
       const query = {};
 
@@ -133,7 +159,7 @@ async function run() {
       res.json(result);
     });
 
-    app.patch("/requests/:id", async (req, res) => {
+    app.patch("/requests/:id", verifyToken, async (req, res) => {
       try {
         const id = req.params.id;
         const { status } = req.body;
@@ -175,7 +201,7 @@ async function run() {
       }
     });
 
-    app.delete("/requests/:id", async (req, res) => {
+    app.delete("/requests/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
 
       const result = await requestsCollection.deleteOne({
