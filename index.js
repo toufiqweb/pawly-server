@@ -21,7 +21,9 @@ const client = new MongoClient(uri, {
   },
 });
 
-const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`));
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+);
 
 const verifyToken = async (req, res, next) => {
   const header = req.headers.authorization;
@@ -63,8 +65,11 @@ async function run() {
     });
 
     app.get("/pets", async (req, res) => {
-      const { search, species, age, size, email } = req.query;
+      const { search, species, age, size } = req.query;
+
       let query = {};
+
+      // SEARCH (name + breed)
       if (search) {
         query.$or = [
           {
@@ -81,9 +86,20 @@ async function run() {
           },
         ];
       }
-      // SPECIES
+
+      // SPECIES FILTER
       if (species) {
         query.species = species;
+      }
+
+      // AGE FILTER
+      if (age) {
+        query.age = age;
+      }
+
+      // SIZE FILTER
+      if (size) {
+        query.size = size;
       }
 
       const results = await petsCollection.find(query).toArray();
